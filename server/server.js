@@ -20,6 +20,12 @@ const JWT_SECRET =
 
 const DEFAULT_STUDENT_PASSWORD = "student123";
 
+const ADMIN_EMAIL =
+    process.env.ADMIN_EMAIL || "admin@edumanage.com";
+
+const ADMIN_PASSWORD =
+    process.env.ADMIN_PASSWORD || "admin123";
+
 
 // ======================================================
 // MIDDLEWARE
@@ -415,6 +421,58 @@ function createMissingStudentAccounts() {
                     error.message
                 );
 
+            }
+
+        }
+    );
+
+}
+
+function createAdminAccount() {
+
+    db.get(
+        `SELECT id FROM users WHERE email = ?`,
+        [ADMIN_EMAIL],
+        async (err, user) => {
+
+            if (err) {
+                console.log("Failed to check admin account:", err.message);
+                return;
+            }
+
+            if (user) {
+                return;
+            }
+
+            try {
+                const hashedPassword =
+                    await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+                db.run(
+                    `
+                    INSERT INTO users (name, email, password, role)
+                    VALUES (?, ?, ?, 'admin')
+                    `,
+                    ["EduManage Admin", ADMIN_EMAIL, hashedPassword],
+                    (insertError) => {
+                        if (insertError) {
+                            console.log(
+                                "Failed to create admin account:",
+                                insertError.message
+                            );
+                            return;
+                        }
+
+                        console.log(
+                            `Admin account created for ${ADMIN_EMAIL}`
+                        );
+                    }
+                );
+            } catch (hashError) {
+                console.log(
+                    "Failed to hash admin password:",
+                    hashError.message
+                );
             }
 
         }
@@ -2477,6 +2535,7 @@ app.listen(
             `EduManage server running on http://localhost:${PORT}`
         );
 
+        createAdminAccount();
         createMissingStudentAccounts();
 
     }
