@@ -25,6 +25,13 @@ yarn-error.log*
 node_modules/
 
 # ==========================
+# Local Database Files
+# ==========================
+*.db
+*.db-shm
+*.db-wal
+
+# ==========================
 # IDE & Editor Settings
 # ==========================
 .vscode/

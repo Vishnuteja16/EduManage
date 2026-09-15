@@ -1,0 +1,27 @@
+{
+  "name": "edumanage",
+  "version": "1.0.0",
+  "description": "🎓**** EduManage – Education Management System**\r **\r 📖 **Overview**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vishnuteja16/EduManage.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Vishnuteja16/EduManage/issues"
+  },
+  "homepage": "https://github.com/Vishnuteja16/EduManage#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "sqlite3": "^6.0.1"
+  }
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Student API</title>
+</head>
+
+<body>
+
+    <h2>Add Student</h2>
+
+    <button onclick="addStudent()">Add Student</button>
+
+    <script>
+        async function addStudent() {
+
+            const student = {
+                name: "Rahul",
+                email: "rahul@gmail.com",
+                department: "CSE",
+                year: 3
+            };
+
+            const response = await fetch("http://localhost:5000/api/students", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(student)
+            });
+
+            const data = await response.json();
+
+            console.log(data);
+
+            alert(data.message);
+        }
+    </script>
+
+    <script>
+        async function getStudents() {
+            const response = await fetch("http://localhost:5000/api/students");
+            const data = await response.json();
+            console.log(data);
+        }
+    </script>
+
+</body>
+</html>

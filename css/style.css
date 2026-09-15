@@ -1,7 +1,42 @@
-body { font-family: 'Inter', sans-serif; }
-.nav-item.active { background-color: #2563eb; color: white; }
-.nav-item { color: #94a3b8; border-radius: 0.375rem; transition: all 0.2s; }
-.nav-item:hover:not(.active) { background-color: #1e293b; color: white; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+
+/* ================= NAVIGATION ================= */
+
+.nav-item.active {
+    background-color: #2563eb;
+    color: white;
+}
+
+
+.nav-item {
+    color: #94a3b8;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+
+.nav-item:hover:not(.active) {
+    background-color: #1e293b;
+    color: white;
+}
+
+
+/* ================= SCROLLBAR ================= */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
