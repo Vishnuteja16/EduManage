@@ -1,189 +1,147 @@
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
+const { Pool } = require("pg");
 
-// ======================================================
-// DATABASE FILE
-// ======================================================
+const databaseUrl = process.env.DATABASE_URL;
 
-const dbPath = path.join(__dirname, "edumanage.db");
+if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required to connect to Supabase PostgreSQL");
+}
 
-
-// ======================================================
-// DATABASE CONNECTION
-// ======================================================
-
-const db = new sqlite3.Database(dbPath, (err) => {
-
-    if (err) {
-
-        console.log(
-            "Database connection failed:",
-            err.message
-        );
-
-    } else {
-
-        console.log(
-            "Connected to SQLite database"
-        );
-
+const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: {
+        rejectUnauthorized: false
     }
-
 });
 
+function toPostgresQuery(sql, params = []) {
+    let parameterIndex = 0;
 
-// ======================================================
-// ENABLE FOREIGN KEYS
-// ======================================================
+    const text = sql.replace(/\?/g, () => `$${++parameterIndex}`);
 
-db.run("PRAGMA foreign_keys = ON");
+    return {
+        text,
+        values: params
+    };
+}
 
+function run(sql, params, callback) {
+    const query = toPostgresQuery(sql, params);
+    const isInsert = /^\s*INSERT\s+INTO\s+/i.test(query.text);
+    const insertQuery =
+        isInsert && !/\bRETURNING\b/i.test(query.text)
+            ? `${query.text} RETURNING id`
+            : query.text;
 
-// ======================================================
-// CREATE TABLES
-// ======================================================
+    pool.query(insertQuery, query.values, (err, result) => {
+        if (err) {
+            callback(err);
+            return;
+        }
 
-db.serialize(() => {
+        callback.call(
+            {
+                lastID: result.rows[0]?.id,
+                changes: result.rowCount
+            },
+            null
+        );
+    });
+}
 
-    // ==================================================
-    // STUDENTS
-    // ==================================================
+function get(sql, params, callback) {
+    const query = toPostgresQuery(sql, params);
 
-    db.run(`
+    pool.query(query, (err, result) => {
+        callback(err, result?.rows[0]);
+    });
+}
+
+function all(sql, params, callback) {
+    const query = toPostgresQuery(sql, params);
+
+    pool.query(query, (err, result) => {
+        callback(err, result?.rows || []);
+    });
+}
+
+function serialize(callback) {
+    callback();
+}
+
+async function initialize() {
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS students (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+            id SERIAL PRIMARY KEY,
             student_id TEXT UNIQUE NOT NULL,
-
             name TEXT NOT NULL,
-
             email TEXT UNIQUE NOT NULL,
-
             phone TEXT
-
         )
     `);
 
-
-    // ==================================================
-    // COURSES
-    // ==================================================
-
-    db.run(`
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS courses (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+            id SERIAL PRIMARY KEY,
             course_id TEXT UNIQUE NOT NULL,
-
             name TEXT NOT NULL,
-
             duration TEXT,
-
-            fee REAL
-
+            fee NUMERIC
         )
     `);
 
-
-    // ==================================================
-    // ENROLLMENTS
-    // ==================================================
-
-    db.run(`
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS enrollments (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            student_id INTEGER NOT NULL,
-
-            course_id INTEGER NOT NULL,
-
-            enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-            FOREIGN KEY (student_id)
-                REFERENCES students(id)
-                ON DELETE CASCADE,
-
-            FOREIGN KEY (course_id)
-                REFERENCES courses(id)
-                ON DELETE CASCADE,
-
+            id SERIAL PRIMARY KEY,
+            student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+            course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+            enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(student_id, course_id)
-
         )
     `);
 
-
-    // ==================================================
-    // RESULTS
-    // ==================================================
-
-    db.run(`
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS results (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            student_id INTEGER NOT NULL,
-
-            course_id INTEGER NOT NULL,
-
+            id SERIAL PRIMARY KEY,
+            student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+            course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
             marks INTEGER NOT NULL,
-
             grade TEXT NOT NULL,
-
-            FOREIGN KEY (student_id)
-                REFERENCES students(id)
-                ON DELETE CASCADE,
-
-            FOREIGN KEY (course_id)
-                REFERENCES courses(id)
-                ON DELETE CASCADE,
-
             UNIQUE(student_id, course_id)
-
         )
     `);
 
-
-    // ==================================================
-    // USERS
-    // ==================================================
-
-    db.run(`
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
-
             email TEXT UNIQUE NOT NULL,
-
             password TEXT NOT NULL,
-
-            role TEXT NOT NULL
-                CHECK(role IN ('admin', 'student')),
-
-            student_id INTEGER,
-
-            FOREIGN KEY (student_id)
-                REFERENCES students(id)
-                ON DELETE CASCADE
-
+            role TEXT NOT NULL CHECK(role IN ('admin', 'student')),
+            student_id INTEGER REFERENCES students(id) ON DELETE CASCADE
         )
     `);
 
+    console.log("Supabase PostgreSQL tables are ready");
+}
 
-    console.log(
-        "Database tables created successfully"
-    );
-
+const ready = initialize().catch((error) => {
+    console.error("Database initialization failed:", error.message);
+    throw error;
 });
 
+function waitForDatabase(operation) {
+    return (...args) => {
+        ready.then(() => operation(...args)).catch((error) => {
+            const callback = args[args.length - 1];
+            callback(error);
+        });
+    };
+}
 
-// ======================================================
-// EXPORT DATABASE
-// ======================================================
-
-module.exports = db;
+module.exports = {
+    run: waitForDatabase(run),
+    get: waitForDatabase(get),
+    all: waitForDatabase(all),
+    serialize,
+    ready
+};

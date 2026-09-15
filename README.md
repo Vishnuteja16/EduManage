@@ -49,8 +49,8 @@ The system provides separate access for **Administrators** and **Students** usin
 
 ### Database
 
-- SQLite
-- `sqlite3`
+- Supabase PostgreSQL
+- `pg`
 
 ### Authentication and Security
 
@@ -130,7 +130,7 @@ The screenshots below show the main EduManage user flow. Additional screens can 
                                      │
                                      ▼
                          ┌───────────────────────┐
-                         │       SQLite          │
+                         │   Supabase PostgreSQL  │
                          │       Database        │
                          └───────────┬───────────┘
                                      │
@@ -192,7 +192,7 @@ Backend
 
 # 🗄️ Database Architecture
 
-EduManage uses SQLite with relational tables for users, students, courses, enrollments, and results.
+EduManage uses Supabase PostgreSQL with relational tables for users, students, courses, enrollments, and results.
 
 ```text
 ┌─────────────────────┐
@@ -427,7 +427,20 @@ cd EduManage
 npm install
 ```
 
-## 4. Start the backend
+## 4. Configure environment variables
+
+Set these variables in your hosting provider or local environment:
+
+```text
+DATABASE_URL=<Supabase PostgreSQL connection string>
+JWT_SECRET=<long random secret>
+ADMIN_EMAIL=admin@edumanage.com
+ADMIN_PASSWORD=<strong admin password>
+```
+
+Do not commit these values to GitHub.
+
+## 5. Start the backend
 
 ```bash
 npm start
@@ -439,13 +452,13 @@ The server runs at:
 http://localhost:5000
 ```
 
-## 5. Open the application
+## 6. Open the application
 
 Open `login.html` in a browser after starting the backend.
 
-The server creates `server/edumanage.db` automatically. This local database file is excluded from Git.
+The server creates the required tables automatically in Supabase on startup.
 
-For deployment, configure a strong `JWT_SECRET` environment variable in the hosting provider. The included `render.yaml` can be used to create a Render web service with the required build, start, and health-check settings.
+Configure `DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` environment variables in the hosting provider. `DATABASE_URL` is the Supabase PostgreSQL connection string.
 
 ---
 
@@ -459,12 +472,12 @@ The project currently does not include an automated test suite.
 
 # 🌐 Deployment
 
-The project can be deployed using a static frontend host and a Node.js backend host:
+The project can be deployed using Vercel for the frontend, with the Express backend hosted on Railway, Render, or another Node.js host connected to Supabase:
 
 ```text
 Frontend → Vercel or another static host
-Backend  → Render, Azure, or another Node.js host
-Database → SQLite for demonstrations, PostgreSQL for production
+Backend  → Railway, Render, Azure, or another Node.js host
+Database → Supabase PostgreSQL
 ```
 
 Production architecture:
@@ -485,7 +498,7 @@ Production architecture:
         Persistent Database Storage
 ```
 
-> SQLite on an ephemeral cloud filesystem is suitable for demonstrations and testing, but production deployments should use persistent storage or migrate to PostgreSQL.
+> Keep the Supabase connection string and application secrets in the hosting provider's environment settings, never in the repository.
 
 ---
 
