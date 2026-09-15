@@ -74,17 +74,33 @@ The screenshots below show the main EduManage user flow. Additional screens can 
 
 ![EduManage login screen](screenshots/01-login.png)
 
-### Planned screenshot order
+### 2. Dashboard
 
-```text
-01-login.png
-02-dashboard.png
-03-courses.png
-04-students.png
-05-enrollments.png
-06-results.png
-07-view-results.png
-```
+![EduManage dashboard](screenshots/02-dashboard.png)
+
+### 3. Course Management
+
+![Course management](screenshots/03-courses.png)
+
+### 4. Student Management
+
+![Student management](screenshots/04-students.png)
+
+### 5. Enrollment Management
+
+![Enrollment management](screenshots/05-enrollments.png)
+
+### 6. View Results
+
+![View results](screenshots/06-view-results.png)
+
+### 7. Student My Courses
+
+![Student courses](screenshots/07-my-courses.png)
+
+### 8. Exit Screen
+
+![Exit screen](screenshots/08-exit-screen.png)
 
 ---
 
