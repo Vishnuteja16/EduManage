@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "🎓**** EduManage – Education Management System**\r **\r 📖 **Overview**",
   "main": "index.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "node server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -23,6 +26,6 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "5.1.7"
   }
 }
