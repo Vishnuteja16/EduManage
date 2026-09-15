@@ -94,14 +94,6 @@ The screenshots below show the main EduManage user flow. Additional screens can 
 
 ![View results](screenshots/06-view-results.png)
 
-### 7. Student My Courses
-
-![Student courses](screenshots/07-my-courses.png)
-
-### 8. Exit Screen
-
-![Exit screen](screenshots/08-exit-screen.png)
-
 ---
 
 # 🏗️ System Architecture
