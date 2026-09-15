@@ -66,6 +66,28 @@ The system provides separate access for **Administrators** and **Students** usin
 
 ---
 
+# 📸 Screenshots
+
+The screenshots below show the main EduManage user flow. Additional screens can be added to the `screenshots/` folder using the same numbered naming convention.
+
+### 1. Login
+
+![EduManage login screen](screenshots/01-login.png)
+
+### Planned screenshot order
+
+```text
+01-login.png
+02-dashboard.png
+03-courses.png
+04-students.png
+05-enrollments.png
+06-results.png
+07-view-results.png
+```
+
+---
+
 # 🏗️ System Architecture
 
 ```text
