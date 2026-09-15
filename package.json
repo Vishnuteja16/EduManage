@@ -4,6 +4,7 @@
   "description": "🎓**** EduManage – Education Management System**\r **\r 📖 **Overview**",
   "main": "index.js",
   "scripts": {
+    "start": "node server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

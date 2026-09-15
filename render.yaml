@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: edumanage
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true

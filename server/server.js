@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const path = require("path");
 
 const db = require("./database");
 
@@ -12,9 +13,10 @@ const app = express();
 // CONFIGURATION
 // ======================================================
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-const JWT_SECRET = "edumanage_secret_key_2026";
+const JWT_SECRET =
+    process.env.JWT_SECRET || "edumanage_secret_key_2026";
 
 const DEFAULT_STUDENT_PASSWORD = "student123";
 
@@ -27,6 +29,8 @@ app.use(cors());
 
 app.use(express.json());
 
+app.use(express.static(path.join(__dirname, "..")));
+
 
 // ======================================================
 // BASIC ROUTE
@@ -34,7 +38,7 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
 
-    res.send("EduManage Backend is Running!");
+    res.sendFile(path.join(__dirname, "..", "index.html"));
 
 });
 

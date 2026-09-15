@@ -2,7 +2,10 @@
 // EduManage Login
 // ======================================================
 
-const API_URL = "http://localhost:5000/api";
+const API_URL =
+    window.location.protocol === "file:"
+        ? "http://localhost:5000/api"
+        : "/api";
 
 const loginForm =
     document.getElementById("login-form");

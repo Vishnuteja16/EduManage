@@ -430,7 +430,7 @@ npm install
 ## 4. Start the backend
 
 ```bash
-node server/server.js
+npm start
 ```
 
 The server runs at:
@@ -444,6 +444,8 @@ http://localhost:5000
 Open `login.html` in a browser after starting the backend.
 
 The server creates `server/edumanage.db` automatically. This local database file is excluded from Git.
+
+For deployment, configure a strong `JWT_SECRET` environment variable in the hosting provider. The included `render.yaml` can be used to create a Render web service with the required build, start, and health-check settings.
 
 ---
 
