@@ -2817,9 +2817,40 @@ async function loadResultForm() {
         }
 
 
+        const enrollmentResponse =
+            await fetch(
+                `${API_URL}/enrollments`,
+                {
+
+                    method: "GET",
+
+                    headers:
+                        getHeaders()
+
+                }
+            );
+
+
+        const enrollments =
+            await getResponseData(
+                enrollmentResponse
+            );
+
+
+        if (
+            handleAuthError(
+                enrollmentResponse,
+                enrollments
+            )
+        ) {
+            return;
+        }
+
+
         if (
             !studentResponse.ok ||
-            !courseResponse.ok
+            !courseResponse.ok ||
+            !enrollmentResponse.ok
         ) {
 
             throw new Error(
@@ -2860,13 +2891,24 @@ async function loadResultForm() {
         courseSelect.innerHTML = `
 
             <option value="">
-                Select Course
+                Select a student first
             </option>
 
         `;
 
 
         students.forEach(student => {
+
+            const hasEnrollment =
+                enrollments.some(
+                    (enrollment) =>
+                        String(enrollment.student_db_id) ===
+                            String(student.id)
+                );
+
+            if (!hasEnrollment) {
+                return;
+            }
 
             studentSelect.innerHTML += `
 
@@ -2882,20 +2924,57 @@ async function loadResultForm() {
         });
 
 
-        courses.forEach(course => {
+        function renderResultCourses(studentId) {
 
-            courseSelect.innerHTML += `
+            const enrolledCourseIds =
+                new Set(
+                    enrollments
+                        .filter(
+                            (enrollment) =>
+                                String(enrollment.student_db_id) ===
+                                    String(studentId)
+                        )
+                        .map(
+                            (enrollment) =>
+                                String(enrollment.course_db_id)
+                        )
+                );
 
-                <option value="${course.id}">
+            courseSelect.innerHTML = `
 
-                    ${course.course_id}
-                    - ${course.name}
-
+                <option value="">
+                    Select Course
                 </option>
 
             `;
 
-        });
+            courses
+                .filter(
+                    (course) =>
+                        enrolledCourseIds.has(
+                            String(course.id)
+                        )
+                )
+                .forEach(course => {
+
+                    courseSelect.innerHTML += `
+
+                        <option value="${course.id}">
+
+                            ${course.course_id}
+                            - ${course.name}
+
+                        </option>
+
+                    `;
+
+                });
+        }
+
+        studentSelect.addEventListener(
+            "change",
+            () => renderResultCourses(studentSelect.value)
+        );
 
     }
     catch (error) {

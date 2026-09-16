@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -116,6 +118,12 @@ function requireAdmin(req, res, next) {
 
     next();
 
+}
+
+function isDuplicateKeyError(error) {
+
+    return error?.code === 11000 ||
+        error?.message?.includes("UNIQUE constraint failed");
 }
 
 
@@ -431,7 +439,7 @@ function createMissingStudentAccounts() {
 function createAdminAccount() {
 
     db.get(
-        `SELECT id FROM users WHERE email = ?`,
+        `SELECT id, password FROM users WHERE email = ?`,
         [ADMIN_EMAIL],
         async (err, user) => {
 
@@ -441,6 +449,53 @@ function createAdminAccount() {
             }
 
             if (user) {
+
+                try {
+
+                    const passwordMatches =
+                        await bcrypt.compare(
+                            ADMIN_PASSWORD,
+                            user.password
+                        );
+
+                    if (!passwordMatches) {
+
+                        const hashedPassword =
+                            await bcrypt.hash(
+                                ADMIN_PASSWORD,
+                                10
+                            );
+
+                        db.run(
+                            `
+                            UPDATE users
+                            SET password = ?
+                            WHERE id = ?
+                            `,
+                            [hashedPassword, user.id],
+                            (updateError) => {
+                                if (updateError) {
+                                    console.log(
+                                        "Failed to update admin password:",
+                                        updateError.message
+                                    );
+                                } else {
+                                    console.log(
+                                        `Admin password synchronized for ${ADMIN_EMAIL}`
+                                    );
+                                }
+                            }
+                        );
+                    }
+
+                } catch (passwordError) {
+
+                    console.log(
+                        "Failed to verify admin password:",
+                        passwordError.message
+                    );
+                }
+
                 return;
             }
 
@@ -751,7 +806,9 @@ app.post(
 
             return res.status(500).json({
                 error:
-                    "Failed to create student and login account"
+                    isDuplicateKeyError(error)
+                        ? "Student ID or email already exists"
+                        : "Failed to create student and login account"
             });
 
         }
@@ -1307,11 +1364,7 @@ app.post(
                         err.message
                     );
 
-                    if (
-                        err.message.includes(
-                            "UNIQUE constraint failed"
-                        )
-                    ) {
+                    if (isDuplicateKeyError(err)) {
 
                         return res.status(409).json({
                             error:
@@ -2527,16 +2580,20 @@ app.delete(
 // START SERVER
 // ======================================================
 
-app.listen(
-    PORT,
-    () => {
+db.ready
+    .then(() => {
+        app.listen(
+            PORT,
+            () => {
+                console.log(
+                    `EduManage server running on http://localhost:${PORT}`
+                );
 
-        console.log(
-            `EduManage server running on http://localhost:${PORT}`
+                createAdminAccount();
+                createMissingStudentAccounts();
+            }
         );
-
-        createAdminAccount();
-        createMissingStudentAccounts();
-
-    }
-);
+    })
+    .catch(() => {
+        process.exitCode = 1;
+    });
