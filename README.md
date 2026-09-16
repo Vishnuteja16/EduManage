@@ -49,8 +49,8 @@ The system provides separate access for **Administrators** and **Students** usin
 
 ### Database
 
-- Supabase PostgreSQL
-- `pg`
+- MongoDB Atlas
+- MongoDB access through `mongoose`
 
 ### Authentication and Security
 
@@ -130,7 +130,7 @@ The screenshots below show the main EduManage user flow. Additional screens can 
                                      │
                                      ▼
                          ┌───────────────────────┐
-                         │   Supabase PostgreSQL  │
+                         │     MongoDB Atlas     │
                          │       Database        │
                          └───────────┬───────────┘
                                      │
@@ -190,18 +190,18 @@ Backend
 
 ---
 
-# 🗄️ Database Architecture
+# 🗄️ MongoDB Database Architecture
 
-EduManage uses Supabase PostgreSQL with relational tables for users, students, courses, enrollments, and results.
+EduManage uses MongoDB Atlas with five collections: `users`, `students`, `courses`, `enrollments`, and `results`. The application uses numeric `id` values for its public relationships and hides MongoDB's internal `_id` from API responses. Relationships and validation are enforced by the Node.js database adapter, while MongoDB unique indexes protect email, student ID, course ID, and duplicate enrollment/result combinations.
 
 ```text
 ┌─────────────────────┐
 │      students       │
 ├─────────────────────┤
-│ id (PK)             │
-│ student_id (UNIQUE) │
+│ id (identifier)     │
+│ student_id (unique) │
 │ name                │
-│ email (UNIQUE)      │
+│ email (unique)      │
 │ phone               │
 └──────────┬──────────┘
            │
@@ -211,17 +211,17 @@ EduManage uses Supabase PostgreSQL with relational tables for users, students, c
 ┌─────────────────────┐    ┌─────────────────────┐
 │    enrollments      │    │       results       │
 ├─────────────────────┤    ├─────────────────────┤
-│ id (PK)             │    │ id (PK)             │
-│ student_id (FK)     │    │ student_id (FK)     │
-│ course_id (FK)      │    │ course_id (FK)      │
+│ id (identifier)     │    │ id (identifier)     │
+│ student_id (ref)    │    │ student_id (ref)    │
+│ course_id (ref)     │    │ course_id (ref)     │
 └──────────┬──────────┘    │ marks               │
            │               │ grade               │
            ▼               └──────────┬──────────┘
 ┌─────────────────────┐              │
 │       courses       │◄─────────────┘
 ├─────────────────────┤
-│ id (PK)             │
-│ course_id (UNIQUE)  │
+│ id (identifier)     │
+│ course_id (unique)  │
 │ name                │
 │ duration            │
 │ fee                 │
@@ -230,12 +230,12 @@ EduManage uses Supabase PostgreSQL with relational tables for users, students, c
 ┌─────────────────────┐
 │        users        │
 ├─────────────────────┤
-│ id (PK)             │
+│ id (identifier)     │
 │ name                │
-│ email (UNIQUE)      │
+│ email (unique)      │
 │ password            │
 │ role                │
-│ student_id (FK)     │
+│ student_id (ref)    │
 └─────────────────────┘
 ```
 
@@ -246,7 +246,8 @@ EduManage uses Supabase PostgreSQL with relational tables for users, students, c
 - A student can have results for multiple courses.
 - A student account is linked to a student record.
 - Admin accounts are not linked to a student record.
-- Related records are removed according to the database relationships.
+- Results can be added only for a student-course pair that already exists in `enrollments`.
+- Related records are removed by application logic when a student or course is deleted.
 
 ---
 
@@ -268,11 +269,15 @@ EduManage/
 │   ├── createadmin.js
 │   └── createstudent.js
 │
+├── database/
+│   └── MongoDB data is hosted in MongoDB Atlas
+│
 ├── index.html
 ├── login.html
 ├── test-api.html
 ├── package.json
-├── package-lock.json
+├── render.yaml
+├── .env.example
 ├── .gitignore
 └── README.md
 ```
@@ -429,16 +434,19 @@ npm install
 
 ## 4. Configure environment variables
 
-Set these variables in your hosting provider or local environment:
+Create a root `.env` file for local development, or add these variables in your hosting provider:
 
 ```text
-DATABASE_URL=<Supabase PostgreSQL connection string>
+DATABASE_URL=<MongoDB connection string>
+MONGODB_DATABASE=edumanage
 JWT_SECRET=<long random secret>
 ADMIN_EMAIL=admin@edumanage.com
 ADMIN_PASSWORD=<strong admin password>
 ```
 
 Do not commit these values to GitHub.
+
+For MongoDB Atlas, create a database user under **Database Access**, allow the deployment IP under **Network Access**, and copy the connection string from **Connect → Drivers**. URL-encode special characters in the database password, such as `@` (`%40`) and `#` (`%23`).
 
 ## 5. Start the backend
 
@@ -456,9 +464,9 @@ http://localhost:5000
 
 Open `login.html` in a browser after starting the backend.
 
-The server creates the required tables automatically in Supabase on startup.
+The server connects to MongoDB and creates the required unique indexes automatically on startup.
 
-Configure `DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` environment variables in the hosting provider. `DATABASE_URL` is the Supabase PostgreSQL connection string.
+Configure `DATABASE_URL`, `MONGODB_DATABASE`, `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` environment variables in the hosting provider. Do not commit the MongoDB connection string or its password.
 
 ---
 
@@ -472,13 +480,41 @@ The project currently does not include an automated test suite.
 
 # 🌐 Deployment
 
-The project can be deployed using Vercel for the frontend, with the Express backend hosted on Railway, Render, or another Node.js host connected to Supabase:
+The recommended deployment is a single Render web service connected to MongoDB Atlas. The Express server serves both the static frontend and the `/api` routes, so no separate frontend host is required.
 
 ```text
-Frontend → Vercel or another static host
-Backend  → Railway, Render, Azure, or another Node.js host
-Database → Supabase PostgreSQL
+Frontend and API → Render web service
+Database          → MongoDB Atlas
 ```
+
+## Deploy with Render
+
+1. Push the repository to GitHub. Keep `.env` out of the repository.
+2. In Render, select **New → Web Service** and connect the GitHub repository.
+3. Use these service settings:
+
+```text
+Runtime: Node
+Build command: npm install
+Start command: npm start
+Health check path: /
+```
+
+4. Add these environment variables in Render:
+
+```text
+DATABASE_URL=<MongoDB Atlas connection string>
+MONGODB_DATABASE=edumanage
+JWT_SECRET=<long random secret>
+ADMIN_EMAIL=<admin email>
+ADMIN_PASSWORD=<strong admin password>
+```
+
+5. Deploy the service and open the Render URL. The login page is available at `/login.html`.
+
+The repository includes `render.yaml` with the build command, start command, health check, and required environment variable definitions. `DATABASE_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` must still be supplied in Render because they are marked as secret values.
+
+If the frontend is hosted separately on Vercel or another static host, update `API_URL` in `js/script.js` to point to the deployed backend URL, for example `https://your-backend.onrender.com/api`, and configure CORS for that origin.
 
 Production architecture:
 
@@ -498,13 +534,13 @@ Production architecture:
         Persistent Database Storage
 ```
 
-> Keep the Supabase connection string and application secrets in the hosting provider's environment settings, never in the repository.
+> Keep the MongoDB connection string and application secrets in the hosting provider's environment settings, never in the repository.
 
 ---
 
 # 🎯 Future Improvements
 
-- PostgreSQL database migration
+- MongoDB indexes and backups
 - Password change functionality
 - Email notifications
 - Attendance management
@@ -524,7 +560,7 @@ This project demonstrates:
 - Frontend development with HTML, CSS, and JavaScript
 - REST API development with Node.js and Express.js
 - CRUD operations
-- SQL and relational database design
+- MongoDB collection design and application-level relationships
 - JWT authentication and password hashing
 - Role-Based Access Control
 - API integration and database relationships
@@ -555,7 +591,7 @@ Authorization
    ↓
 Business Logic
    ↓
-Relational Database
+MongoDB Atlas Collections
 ```
 
 EduManage demonstrates a practical education management platform with secure authentication, role-based access, and database-driven CRUD operations.
