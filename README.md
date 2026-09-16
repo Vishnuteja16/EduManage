@@ -4,6 +4,10 @@ EduManage is a full-stack Education Management System for managing students, cou
 
 The system provides separate access for **Administrators** and **Students** using JWT-based authentication and role-based authorization.
 
+## 🌐 Live Application
+
+[Open EduManage](https://edumanage-9j8y.onrender.com/login.html)
+
 ---
 
 ## 🚀 Features
@@ -510,7 +514,7 @@ ADMIN_EMAIL=<admin email>
 ADMIN_PASSWORD=<strong admin password>
 ```
 
-5. Deploy the service and open the Render URL. The login page is available at `/login.html`.
+5. Deploy the service and open the live application at [https://edumanage-9j8y.onrender.com/login.html](https://edumanage-9j8y.onrender.com/login.html).
 
 The repository includes `render.yaml` with the build command, start command, health check, and required environment variable definitions. `DATABASE_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` must still be supplied in Render because they are marked as secret values.
 
